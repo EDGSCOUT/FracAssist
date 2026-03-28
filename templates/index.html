@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股骨颈骨折辅助诊断系统 - Web版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+            padding: 20px;
+            min-height: 600px;
+        }
+        
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .upload-area {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #e9ecef;
+        }
+        
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #e9ecef;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 15px;
+        }
+        
+        .upload-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .canvas-container {
+            flex: 1;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            position: relative;
+            min-height: 500px;
+        }
+        
+        #imageCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+            border-radius: 5px;
+            background: white;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-upload {
+            background: #28a745;
+        }
+        
+        .btn-clear {
+            background: #dc3545;
+        }
+        
+        .btn-calculate {
+            background: #007bff;
+        }
+        
+        .btn-save {
+            background: #fd7e14;
+        }
+        
+        .right-panel {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 800px;
+        }
+        
+        .right-panel h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .result-section {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .result-section h3 {
+            color: #764ba2;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .result-item {
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .result-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .result-value {
+            color: #212529;
+            margin-left: 10px;
+        }
+        
+        .suggestion-item {
+            background: #e3f2fd;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .suggestion-title {
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 8px;
+        }
+        
+        .suggestion-content {
+            color: #424242;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        .status-bar {
+            background: #343a40;
+            color: white;
+            padding: 10px 20px;
+            font-size: 0.9em;
+        }
+        
+        .point-marker {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        
+        .point-marker.red {
+            background: #ff4444;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        .point-marker.blue {
+            background: #2196f3;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        .point-label {
+            position: absolute;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            transform: translate(-50%, -150%);
+            white-space: nowrap;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+        
+        .instructions {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            margin-bottom: 15px;
+        }
+        
+        .instructions h4 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ul {
+            margin-left: 20px;
+            color: #856404;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .right-panel {
+                max-height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>股骨颈骨折辅助诊断系统</h1>
+            <p>Web版本 - 上传图像，标注关键点，获取智能分析建议</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="upload-area" id="uploadArea">
+                    <div style="font-size: 48px; color: #667eea; margin-bottom: 15px;">📤</div>
+                    <h3>上传医学影像</h3>
+                    <p style="color: #6c757d; margin: 10px 0;">拖拽图像到此处，或点击下方按钮</p>
+                    <p style="color: #6c757d; font-size: 0.9em;">支持格式：JPG, PNG, TIFF（最大16MB）</p>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        选择图像文件
+                    </button>
+                </div>
+                
+                <div class="canvas-container" id="canvasContainer" style="display: none;">
+                    <canvas id="imageCanvas"></canvas>
+                    <div id="pointMarkers"></div>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn btn-upload" onclick="document.getElementById('fileInput').click()">
+                        📤 上传图像
+                    </button>
+                    <button class="btn btn-clear" onclick="clearPoints()">
+                        🗑️ 清除标注
+                    </button>
+                    <button class="btn btn-calculate" onclick="calculateAndSuggest()">
+                        📊 计算分析
+                    </button>
+                    <button class="btn btn-save" onclick="saveResult()">
+                        💾 保存结果
+                    </button>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <h2>📋 分析结果</h2>
+                
+                <div id="instructions" class="instructions">
+                    <h4>📌 使用说明</h4>
+                    <ul>
+                        <li>第一步：上传医学影像</li>
+                        <li>第二步：在图像上点击标注骨折近端点（红）</li>
+                        <li>第三步：点击标注骨折远端点（蓝）</li>
+                        <li>第四步：点击【计算分析】获取结果</li>
+                    </ul>
+                </div>
+                
+                <div id="results"></div>
+            </div>
+        </div>
+        
+        <div class="status-bar" id="statusBar">
+            就绪 - 请上传图像开始分析
+        </div>
+    </div>
+
+    <script>
+        let currentImage = null;
+        let points = [];
+        let canvas, ctx;
+        let imageScale = 1;
+        let imageOffsetX = 0;
+        let imageOffsetY = 0;
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            canvas = document.getElementById('imageCanvas');
+            ctx = canvas.getContext('2d');
+            
+            // 文件上传
+            document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+            
+            // 拖拽上传
+            const uploadArea = document.getElementById('uploadArea');
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+            
+            // Canvas点击
+            canvas.addEventListener('click', handleCanvasClick);
+        });
+        
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+        
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) {
+                alert('请选择图像文件！');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            updateStatus('正在上传图像...');
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadImage('/image/' + data.filename);
+                } else {
+                    alert('上传失败: ' + data.error);
+                    updateStatus('上传失败');
+                }
+            })
+            .catch(error => {
+                alert('上传失败: ' + error);
+                updateStatus('上传失败');
+            });
+        }
+        
+        function loadImage(src) {
+            const img = new Image();
+            img.onload = function() {
+                currentImage = img;
+                points = [];
+                setupCanvas();
+                drawImage();
+                updateStatus('图像已加载 - 请标注骨折关键点');
+                document.getElementById('uploadArea').style.display = 'none';
+                document.getElementById('canvasContainer').style.display = 'block';
+                clearResults();
+            };
+            img.onerror = function() {
+                alert('加载图像失败');
+                updateStatus('加载图像失败');
+            };
+            img.src = src;
+        }
+        
+        function setupCanvas() {
+            const container = document.getElementById('canvasContainer');
+            const containerWidth = container.clientWidth - 30;
+            const containerHeight = container.clientHeight - 30;
+            
+            // 计算缩放比例
+            const scaleX = containerWidth / currentImage.width;
+            const scaleY = containerHeight / currentImage.height;
+            imageScale = Math.min(scaleX, scaleY, 1);
+            
+            canvas.width = currentImage.width * imageScale;
+            canvas.height = currentImage.height * imageScale;
+        }
+        
+        function drawImage() {
+            if (!currentImage) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+            
+            // 绘制骨折线
+            if (points.length === 2) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#ffd700';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.moveTo(points[0].x * imageScale, points[0].y * imageScale);
+                ctx.lineTo(points[1].x * imageScale, points[1].y * imageScale);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            // 绘制点
+            points.forEach((point, index) => {
+                const x = point.x * imageScale;
+                const y = point.y * imageScale;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = index === 0 ? '#ff4444' : '#2196f3';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // 标签
+                ctx.fillStyle = index === 0 ? '#ff4444' : '#2196f3';
+                ctx.font = 'bold 12px Arial';
+                ctx.fillText(index === 0 ? '近端点' : '远端点', x, y - 15);
+            });
+        }
+        
+        function handleCanvasClick(event) {
+            if (!currentImage) {
+                alert('请先上传图像');
+                return;
+            }
+            
+            if (points.length >= 2) {
+                alert('已标注2个点，请先清除标注');
+                return;
+            }
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = (event.clientX - rect.left) / imageScale;
+            const y = (event.clientY - rect.top) / imageScale;
+            
+            points.push({ x: Math.round(x), y: Math.round(y) });
+            drawImage();
+            
+            const pointNames = ['近端点', '远端点'];
+            updateStatus(`已标注: ${pointNames.slice(0, points.length).join(', ')}`);
+        }
+        
+        function clearPoints() {
+            points = [];
+            drawImage();
+            updateStatus('标注已清除 - 请重新标注');
+            clearResults();
+        }
+        
+        function calculateAndSuggest() {
+            if (points.length !== 2) {
+                alert('请先标注两个关键点');
+                return;
+            }
+            
+            updateStatus('正在计算分析...');
+            
+            fetch('/calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ points: points })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayResults(data);
+                    updateStatus(`分析完成 - 骨折角度: ${data.angle.toFixed(1)}°`);
+                } else {
+                    alert('计算失败: ' + data.error);
+                    updateStatus('计算失败');
+                }
+            })
+            .catch(error => {
+                alert('计算失败: ' + error);
+                updateStatus('计算失败');
+            });
+        }
+        
+        function displayResults(data) {
+            const resultsDiv = document.getElementById('results');
+            document.getElementById('instructions').style.display = 'none';
+            
+            let html = `
+                <div class="result-section">
+                    <h3>📊 基本信息与分析结果</h3>
+                    <div class="result-item">
+                        <span class="result-label">分析时间:</span>
+                        <span class="result-value">${data.time}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">${data.angle_desc}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">骨折线类型:</span>
+                        <span class="result-value">${data.angle_type}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">骨折线斜率:</span>
+                        <span class="result-value">${data.slope.toFixed(3)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">近端点:</span>
+                        <span class="result-value">(${data.points[0].x}, ${data.points[0].y})</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">远端点:</span>
+                        <span class="result-value">(${data.points[1].x}, ${data.points[1].y})</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">两点距离:</span>
+                        <span class="result-value">${data.distance.toFixed(1)} 像素</span>
+                    </div>
+                </div>
+                
+                <div class="result-section">
+                    <h3>🏥 术前固定建议</h3>
+            `;
+            
+            data.suggestions.forEach((suggestion, index) => {
+                html += `
+                    <div class="suggestion-item">
+                        <div class="suggestion-title">${index + 1}. ${suggestion.title}</div>
+                        <div class="suggestion-content">${suggestion.content}</div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                </div>
+                <div class="result-section" style="background: #fff3cd; border-left-color: #ffc107;">
+                    <h3>⚠️ 注意事项</h3>
+                    <div class="result-item">
+                        <p style="color: #856404; line-height: 1.6;">
+                            • 本分析基于二维图像标注，仅供参考<br>
+                            • 实际手术方案应由专业医生根据三维影像和患者具体情况制定<br>
+                            • 建议结合健侧对比进行更准确的评估
+                        </p>
+                    </div>
+                </div>
+            `;
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('instructions').style.display = 'block';
+        }
+        
+        function saveResult() {
+            if (points.length === 0) {
+                alert('没有可保存的分析结果');
+                return;
+            }
+            
+            const resultsDiv = document.getElementById('results');
+            if (!resultsDiv.innerHTML.trim()) {
+                alert('请先进行计算分析');
+                return;
+            }
+            
+            const blob = new Blob([resultsDiv.innerText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `股骨颈骨折分析报告_${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function updateStatus(message) {
+            document.getElementById('statusBar').textContent = message;
+        }
+        
+        // 窗口大小改变时重新设置canvas
+        window.addEventListener('resize', function() {
+            if (currentImage) {
+                setupCanvas();
+                drawImage();
+            }
+        });
+    </script>
+</body>
+</html>
