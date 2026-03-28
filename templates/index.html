@@ -467,7 +467,7 @@
             canvas.height = currentImage.height * imageScale;
         }
         
-        function drawImage() {
+        function drawImage(screws = null) {
             if (!currentImage) return;
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -483,6 +483,45 @@
                 ctx.lineTo(points[1].x * imageScale, points[1].y * imageScale);
                 ctx.stroke();
                 ctx.setLineDash([]);
+            }
+            
+            // 绘制钉子
+            if (screws) {
+                const screwColors = ['#e74c3c', '#3498db', '#2ecc71'];
+                screws.forEach((screw, index) => {
+                    const entryX = screw.entry_point[0] * imageScale;
+                    const entryY = screw.entry_point[1] * imageScale;
+                    const tipX = screw.tip_point[0] * imageScale;
+                    const tipY = screw.tip_point[1] * imageScale;
+                    
+                    // 绘制钉子主体
+                    ctx.beginPath();
+                    ctx.strokeStyle = screwColors[index];
+                    ctx.lineWidth = 4;
+                    ctx.moveTo(entryX, entryY);
+                    ctx.lineTo(tipX, tipY);
+                    ctx.stroke();
+                    
+                    // 绘制进针点
+                    ctx.beginPath();
+                    ctx.arc(entryX, entryY, 6, 0, Math.PI * 2);
+                    ctx.fillStyle = screwColors[index];
+                    ctx.fill();
+                    ctx.strokeStyle = 'white';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    // 绘制钉尖
+                    ctx.beginPath();
+                    ctx.arc(tipX, tipY, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = screwColors[index];
+                    ctx.fill();
+                    
+                    // 标签
+                    ctx.fillStyle = screwColors[index];
+                    ctx.font = 'bold 11px Arial';
+                    ctx.fillText(`钉${index + 1}`, entryX, entryY - 12);
+                });
             }
             
             // 绘制点
@@ -553,6 +592,7 @@
             .then(data => {
                 if (data.success) {
                     displayResults(data);
+                    drawImage(data.screws); // 绘制钉子
                     updateStatus(`分析完成 - 骨折角度: ${data.angle.toFixed(1)}°`);
                 } else {
                     alert('计算失败: ' + data.error);
@@ -602,14 +642,14 @@
                 </div>
                 
                 <div class="result-section">
-                    <h3>🏥 术前固定建议</h3>
+                    <h3>🏥 详细诊断建议</h3>
             `;
             
-            data.suggestions.forEach((suggestion, index) => {
+            data.recommendations.forEach((rec, index) => {
                 html += `
                     <div class="suggestion-item">
-                        <div class="suggestion-title">${index + 1}. ${suggestion.title}</div>
-                        <div class="suggestion-content">${suggestion.content}</div>
+                        <div class="suggestion-title">${index + 1}. ${rec.title}</div>
+                        <div class="suggestion-content">${rec.content}</div>
                     </div>
                 `;
             });
@@ -622,7 +662,8 @@
                         <p style="color: #856404; line-height: 1.6;">
                             • 本分析基于二维图像标注，仅供参考<br>
                             • 实际手术方案应由专业医生根据三维影像和患者具体情况制定<br>
-                            • 建议结合健侧对比进行更准确的评估
+                            • 建议结合健侧对比进行更准确的评估<br>
+                            • 螺钉位置为算法建议，实际手术需根据患者解剖结构调整
                         </p>
                     </div>
                 </div>

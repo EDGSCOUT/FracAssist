@@ -9,6 +9,7 @@ import numpy as np
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
+from fixation_algorithm import ScrewPlacementAlgorithm
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -176,8 +177,22 @@ def calculate():
         # 计算角度
         angle, slope = calculate_angle(x1, y1, x2, y2)
         
-        # 生成建议
-        angle_desc, angle_type, suggestions = generate_suggestion(angle, slope)
+        # 初始化钉子放置算法（假设图像尺寸，实际应从图像获取）
+        image_width = 800  # 默认值，可以从上传的图像获取实际尺寸
+        image_height = 600
+        algorithm = ScrewPlacementAlgorithm(image_width, image_height)
+        
+        # 计算三枚螺钉的位置
+        screws = algorithm.calculate_screw_positions(
+            point1=(x1, y1),
+            point2=(x2, y2),
+            angle_deg=angle,
+            slope=slope
+        )
+        
+        # 生成详细建议
+        angle_desc, angle_type = get_angle_description(angle)
+        recommendations = algorithm.generate_detailed_recommendations(angle, angle_type, screws)
         
         # 计算两点距离
         distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
@@ -190,12 +205,22 @@ def calculate():
             'slope': slope,
             'distance': distance,
             'points': data['points'],
-            'suggestions': suggestions,
+            'screws': screws,  # 新增：钉子位置和大小信息
+            'recommendations': recommendations,  # 新增：详细建议
             'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         })
         
     except Exception as e:
         return jsonify({'error': f'计算失败: {str(e)}'}), 500
+
+def get_angle_description(angle):
+    """获取角度描述"""
+    if angle < 30:
+        return f"骨折线角度: {angle:.1f}°（近水平）", "近水平骨折"
+    elif angle < 50:
+        return f"骨折线角度: {angle:.1f}°（中等角度）", "中等角度骨折"
+    else:
+        return f"骨折线角度: {angle:.1f}°（陡峭）", "陡峭骨折"
 
 @app.route('/image/<filename>')
 def get_image(filename):
