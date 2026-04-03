@@ -37,7 +37,7 @@ echo "🚀 启动Web服务器..."
 echo ""
 
 # 启动Web服务器（后台运行）
-python3 app.py > /dev/null 2>&1 &
+nohup python3 app.py > app.log 2>&1 &
 
 # 获取进程ID
 SERVER_PID=$!
@@ -45,17 +45,23 @@ echo "✅ 服务器进程ID: $SERVER_PID"
 
 # 等待服务器启动
 echo "⏳ 等待服务器启动..."
-sleep 3
+for i in {1..10}; do
+    sleep 1
+    if curl -s http://localhost:8080 > /dev/null 2>&1; then
+        echo "✅ 服务器启动成功"
+        echo ""
+        break
+    fi
+    echo "   尝试连接 ($i/10)..."
+done
 
-# 检查服务器是否成功启动
+# 再次检查服务器状态
 if ! curl -s http://localhost:8080 > /dev/null 2>&1; then
     echo "❌ 服务器启动失败"
+    echo "📋 请查看日志：tail -f app.log"
     kill $SERVER_PID 2>/dev/null
     exit 1
 fi
-
-echo "✅ 服务器启动成功"
-echo ""
 
 # 自动打开浏览器
 echo "🌐 正在打开浏览器..."
