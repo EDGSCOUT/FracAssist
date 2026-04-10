@@ -69,9 +69,9 @@ class ScrewPlacementAlgorithm:
             'name': '螺钉1（低位主钉）',
             'entry_point': screw1_pos['entry'],
             'tip_point': screw1_pos['tip'],
-            'length_mm': screw1_pos['length'],
+            'length': screw1_pos['length'],
             'diameter_mm': screw_diameter,
-            'angle_deg': screw1_pos['angle'],
+            'angle': screw1_pos['angle'],
             'description': '低位主承重螺钉，应尽量垂直于骨折线'
         })
         
@@ -83,9 +83,9 @@ class ScrewPlacementAlgorithm:
             'name': '螺钉2（中位辅助钉）',
             'entry_point': screw2_pos['entry'],
             'tip_point': screw2_pos['tip'],
-            'length_mm': screw2_pos['length'],
+            'length': screw2_pos['length'],
             'diameter_mm': screw_diameter,
-            'angle_deg': screw2_pos['angle'],
+            'angle': screw2_pos['angle'],
             'description': '中位辅助稳定螺钉，提供抗旋转稳定性'
         })
         
@@ -97,9 +97,9 @@ class ScrewPlacementAlgorithm:
             'name': '螺钉3（高位支撑钉）',
             'entry_point': screw3_pos['entry'],
             'tip_point': screw3_pos['tip'],
-            'length_mm': screw3_pos['length'],
+            'length': screw3_pos['length'],
             'diameter_mm': screw_diameter,
-            'angle_deg': screw3_pos['angle'],
+            'angle': screw3_pos['angle'],
             'description': '高位支撑螺钉，防止股骨颈短缩'
         })
         
